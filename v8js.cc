@@ -526,7 +526,10 @@ static void php_v8js_free_storage(void *object TSRMLS_DC) /* {{{ */
 	if (c->pending_exception) {
 		zval_ptr_dtor(&c->pending_exception);
 	}
-	
+	if (c->module_loader) {
+		zval_ptr_dtor(&c->module_loader);
+	}
+
 	c->object_name.Reset();
 	c->object_name.~Persistent();
 	c->global_template.Reset();
