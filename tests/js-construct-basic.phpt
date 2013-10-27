@@ -31,6 +31,9 @@ $v8->executeString('
 
     var ngGreeter = new PHP.greeter.constructor();
     ngGreeter.sayHello("Ringo");
+
+    // ----- clean up -----
+    jsGreeter = JsGreeter = jsGreeterNg = ngGreeter = null;
 ');
 ?>
 ===EOF===

@@ -74,7 +74,7 @@ try {
   echo " __invoke() with new [PHP]\n";
   $myobj = new $obj('arg1','arg2','arg3'); $myobj->myownfunc();
   echo " __invoke() with new [JS]\n";
-  $blaa->executeString("myobj = new PHP.obj('arg1','arg2','arg3'); myobj.myownfunc();", "invoke_test2 #2.js");
+  $blaa->executeString("myobj = new PHP.obj('arg1','arg2','arg3'); myobj.myownfunc(); myobj=null;", "invoke_test2 #2.js");
   echo "------------\n";
 
   echo " __tostring() [PHP]\n";

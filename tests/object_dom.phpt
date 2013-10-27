@@ -13,6 +13,7 @@ var node = elements.item(0);
 print("hasChildNodes: "); var_dump(node.hasChildNodes());
 print("hasAttribute('class'): "); var_dump(node.hasAttribute('class'));
 //var_dump(node);
+elements = node = null;
 EOT;
 
 $dom = new DomDocument();

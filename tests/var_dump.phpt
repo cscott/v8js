@@ -68,6 +68,7 @@ try {
 	echo "Error!\n";
 	var_dump($e);
 }
+$v8->executeString('types=null;'); // free memory
 ?>
 ===EOF===
 --EXPECTF--

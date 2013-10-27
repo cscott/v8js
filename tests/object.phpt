@@ -21,6 +21,7 @@ function test()
 }
 test();
 print(PHP.myobj.foo + "\\n");
+dump = test = null;
 EOT;
 
 // Test class
