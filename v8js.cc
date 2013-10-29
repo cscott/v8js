@@ -226,7 +226,7 @@ static void php_v8js_v8_write_property(zval *object, zval *member, zval *value Z
 	v8::Local<v8::Value> v8obj = v8::Local<v8::Value>::New(isolate, obj->v8obj);
 
 	if (v8obj->IsObject() && !v8obj->IsFunction()) {
-		v8obj->ToObject()->ForceSet(V8JS_SYML(Z_STRVAL_P(member), Z_STRLEN_P(member)), zval_to_v8js(value, isolate TSRMLS_CC));
+		v8obj->ToObject()->ForceSet(V8JS_SYML(Z_STRVAL_P(member), Z_STRLEN_P(member)), zval_to_v8js(value, 0, isolate TSRMLS_CC));
 	}
 }
 /* }}} */
@@ -411,7 +411,7 @@ static int php_v8js_v8_call_method(char *method, INTERNAL_FUNCTION_PARAMETERS) /
 	v8::Local<v8::Value> js_retval;
 
 	for (i = 0; i < argc; i++) {
-		jsArgv[i] = v8::Local<v8::Value>::New(isolate, zval_to_v8js(*argv[i], isolate TSRMLS_CC));
+		jsArgv[i] = v8::Local<v8::Value>::New(isolate, zval_to_v8js(*argv[i], 0, isolate TSRMLS_CC));
 	}
 
 	js_retval = cb->Call(V8JS_GLOBAL, argc, jsArgv);
@@ -861,7 +861,7 @@ static PHP_METHOD(V8Js, __construct)
 	v8::Context::Scope context_scope(context);
 
 	/* Create the PHP container object */
-	v8::Local<v8::Value> php_obj = zval_to_v8js(&c->user_properties, isolate TSRMLS_CC);
+	v8::Local<v8::Value> php_obj = zval_to_v8js(&c->user_properties, V8JS_FLAG_READ_ONLY, isolate TSRMLS_CC);
 
 	/* Set name for the PHP JS object */
 	v8::Local<v8::String> object_name_js = (object_name_len) ? V8JS_SYML(object_name, object_name_len) : V8JS_SYM("PHP");

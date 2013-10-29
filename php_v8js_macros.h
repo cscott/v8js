@@ -77,6 +77,8 @@ typedef v8::Persistent<v8::FunctionTemplate, v8::CopyablePersistentTraits<v8::Fu
 
 /* Hidden field name used to link JS wrappers with underlying PHP object */
 #define PHPJS_OBJECT_KEY "phpjs::object"
+/* Hidden field name used to enforce read-only wrappers */
+#define PHPJS_READONLY_KEY "phpjs::readonly"
 
 /* Helper macros */
 #if PHP_V8_API_VERSION < 2005009
@@ -115,6 +117,9 @@ typedef v8::Persistent<v8::FunctionTemplate, v8::CopyablePersistentTraits<v8::Fu
 #define V8JS_FLAG_NONE			(1<<0)
 #define V8JS_FLAG_FORCE_ARRAY	(1<<1)
 
+/* options for V8 object wrappers */
+#define V8JS_FLAG_READ_ONLY     (1<<2)
+
 #define V8JS_DEBUG_AUTO_BREAK_NEVER		0
 #define V8JS_DEBUG_AUTO_BREAK_ONCE		1
 #define V8JS_DEBUG_AUTO_BREAK_ALWAYS	2
@@ -137,7 +142,7 @@ void php_v8js_create_v8(zval *, v8::Handle<v8::Value>, int, v8::Isolate * TSRMLS
 int php_v8js_v8_get_properties_hash(v8::Handle<v8::Value>, HashTable *, int, v8::Isolate * TSRMLS_DC);
 
 /* Convert zval into V8 value */
-v8::Handle<v8::Value> zval_to_v8js(zval *, v8::Isolate * TSRMLS_DC);
+v8::Handle<v8::Value> zval_to_v8js(zval *, int, v8::Isolate * TSRMLS_DC);
 
 /* Convert V8 value into zval */
 int v8js_to_zval(v8::Handle<v8::Value>, zval *, int, v8::Isolate * TSRMLS_DC);

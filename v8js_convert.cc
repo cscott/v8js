@@ -140,7 +140,7 @@ failure:
 	}
 
 	if (retval_ptr != NULL) {
-		return_value = zval_to_v8js(retval_ptr, isolate TSRMLS_CC);
+		return_value = zval_to_v8js(retval_ptr, 0, isolate TSRMLS_CC);
 		zval_ptr_dtor(&retval_ptr);
 	} else {
 		return_value = V8JS_NULL;
@@ -572,6 +572,8 @@ static inline v8::Local<v8::Value> php_v8js_named_property_callback(v8::Local<v8
 			// this is a property (not a method)
 			name++; name_len--;
 		}
+		// access control!
+		v8::Local<v8::Value> ro = self->GetHiddenValue(V8JS_SYM(PHPJS_READONLY_KEY));
 		if (callback_type == V8JS_PROP_GETTER) {
 			/* Nope, not a method -- must be a (case-sensitive) property */
 			php_value = zend_read_property(scope, object, V8JS_CONST name, name_len, true TSRMLS_CC);
@@ -582,7 +584,7 @@ static inline v8::Local<v8::Value> php_v8js_named_property_callback(v8::Local<v8
 				ret_value = v8::Handle<v8::Value>();
 			} else {
 				// wrap it
-				ret_value = zval_to_v8js(php_value, isolate TSRMLS_CC);
+				ret_value = zval_to_v8js(php_value, ro.IsEmpty() ? 0 : V8JS_FLAG_READ_ONLY, isolate TSRMLS_CC);
 				/* We don't own the reference to php_value... unless the
 				 * returned refcount was 0, in which case the below code
 				 * will free it. */
@@ -591,7 +593,7 @@ static inline v8::Local<v8::Value> php_v8js_named_property_callback(v8::Local<v8
 			}
 		} else if (callback_type == V8JS_PROP_SETTER) {
 			MAKE_STD_ZVAL(php_value);
-			if (v8js_to_zval(set_value, php_value, 0, isolate TSRMLS_CC) == SUCCESS) {
+			if (ro.IsEmpty() && v8js_to_zval(set_value, php_value, 0, isolate TSRMLS_CC) == SUCCESS) {
 				zend_update_property(scope, object, V8JS_CONST name, name_len, php_value TSRMLS_CC);
 				ret_value = set_value;
 			} else {
@@ -658,7 +660,7 @@ static void php_v8js_named_property_deleter(v8::Local<v8::String> property, cons
 }
 /* }}} */
 
-static v8::Handle<v8::Value> php_v8js_hash_to_jsobj(zval *value, v8::Isolate *isolate TSRMLS_DC) /* {{{ */
+static v8::Handle<v8::Value> php_v8js_hash_to_jsobj(zval *value, int flags, v8::Isolate *isolate TSRMLS_DC) /* {{{ */
 {
 	v8::Handle<v8::Object> newobj;
 	int i;
@@ -753,6 +755,10 @@ static v8::Handle<v8::Value> php_v8js_hash_to_jsobj(zval *value, v8::Isolate *is
 		newobj = new_tpl->InstanceTemplate()->NewInstance();
 	}
 
+	if (flags & V8JS_FLAG_READ_ONLY) {
+		newobj->SetHiddenValue(V8JS_SYM(PHPJS_READONLY_KEY), V8JS_BOOL(1));
+	}
+
 	/* Object properties */
 	i = myht ? zend_hash_num_elements(myht) : 0;
 
@@ -784,9 +790,9 @@ static v8::Handle<v8::Value> php_v8js_hash_to_jsobj(zval *value, v8::Isolate *is
 						}
 						continue;
 					}
-					newobj->Set(V8JS_STRL(key, key_len - 1), zval_to_v8js(*data, isolate TSRMLS_CC), v8::ReadOnly);
+					newobj->Set(V8JS_STRL(key, key_len - 1), zval_to_v8js(*data, flags, isolate TSRMLS_CC), v8::ReadOnly);
 				} else {
-					newobj->Set(index, zval_to_v8js(*data, isolate TSRMLS_CC));
+					newobj->Set(index, zval_to_v8js(*data, flags, isolate TSRMLS_CC));
 				}
 
 				if (tmp_ht) {
@@ -799,14 +805,14 @@ static v8::Handle<v8::Value> php_v8js_hash_to_jsobj(zval *value, v8::Isolate *is
 }
 /* }}} */
 
-static v8::Handle<v8::Value> php_v8js_hash_to_jsarr(zval *value, v8::Isolate *isolate TSRMLS_DC) /* {{{ */
+static v8::Handle<v8::Value> php_v8js_hash_to_jsarr(zval *value, int flags, v8::Isolate *isolate TSRMLS_DC) /* {{{ */
 {
 	HashTable *myht = HASH_OF(value);
 	int i = myht ? zend_hash_num_elements(myht) : 0;
 
 	/* Return object if dealing with assoc array */
 	if (i > 0 && _php_v8js_is_assoc_array(myht TSRMLS_CC)) {
-		return php_v8js_hash_to_jsobj(value, isolate TSRMLS_CC);
+		return php_v8js_hash_to_jsobj(value, flags, isolate TSRMLS_CC);
 	}
 
 	v8::Local<v8::Array> newarr;
@@ -835,7 +841,7 @@ static v8::Handle<v8::Value> php_v8js_hash_to_jsarr(zval *value, v8::Isolate *is
 				tmp_ht->nApplyCount++;
 			}
 
-			newarr->Set(index++, zval_to_v8js(*data, isolate TSRMLS_CC));
+			newarr->Set(index++, zval_to_v8js(*data, flags, isolate TSRMLS_CC));
 
 			if (tmp_ht) {
 				tmp_ht->nApplyCount--;
@@ -846,18 +852,18 @@ static v8::Handle<v8::Value> php_v8js_hash_to_jsarr(zval *value, v8::Isolate *is
 }
 /* }}} */
 
-v8::Handle<v8::Value> zval_to_v8js(zval *value, v8::Isolate *isolate TSRMLS_DC) /* {{{ */
+v8::Handle<v8::Value> zval_to_v8js(zval *value, int flags, v8::Isolate *isolate TSRMLS_DC) /* {{{ */
 {
 	v8::Handle<v8::Value> jsValue;
 
 	switch (Z_TYPE_P(value))
 	{
 		case IS_ARRAY:
-			jsValue = php_v8js_hash_to_jsarr(value, isolate TSRMLS_CC);
+			jsValue = php_v8js_hash_to_jsarr(value, flags, isolate TSRMLS_CC);
 			break;
 
 		case IS_OBJECT:
-			jsValue = php_v8js_hash_to_jsobj(value, isolate TSRMLS_CC);
+			jsValue = php_v8js_hash_to_jsobj(value, flags, isolate TSRMLS_CC);
 			break;
 
 		case IS_STRING:
