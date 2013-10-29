@@ -13,6 +13,7 @@ class V8Wrapper extends V8Js {
 
 $v8 = new V8Wrapper();
 echo($v8->testing."\n");
+// These are all properties of V8Wrapper, not exported to V8
 $v8->executeString('print(PHP.testing + "\n");');
 $v8->executeString('print(PHP.protectedVar + "\n");');
 $v8->executeString('print(PHP.privateVar + "\n");');
@@ -20,7 +21,7 @@ $v8->executeString('print(PHP.privateVar + "\n");');
 ===EOF===
 --EXPECT--
 23
-23
+undefined
 undefined
 undefined
 ===EOF===

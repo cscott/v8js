@@ -15,7 +15,9 @@ myobj.$foobar = 'CHANGED'; // should be read only!
 print(myobj.$foobar + "\n");  // Undefined (in 1st run!)
 EOT;
 
-$a = new V8Js("myobj", array('$_SERVER' => '_SERVER', '$foobar' => 'myfoobar'));
+$myfoobar = 'undefined';
+
+$a = new V8Js("myobj", array('_SERVER' => &$_SERVER, 'foobar' => &$myfoobar));
 $a->executeString($JS, "test1.js");
 
 $myfoobar = 'myfoobarfromphp';
@@ -37,5 +39,5 @@ myfoobarfromphp
 %d
 myfoobarfromphp
 NULL
-NULL
+string(15) "myfoobarfromphp"
 ===EOF===

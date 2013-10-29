@@ -45,6 +45,6 @@ var_dump($a->myobj->foo);
 mytest => function () { [native code] }
 $foo => ORIGINAL
 Here be monsters..
-CHANGED
-string(7) "CHANGED"
+ORIGINAL
+string(8) "ORIGINAL"
 ===EOF===
