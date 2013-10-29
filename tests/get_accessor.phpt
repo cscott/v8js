@@ -11,18 +11,19 @@ $JS = <<<'EOT'
 print(typeof $foobar + "\n"); // Undefined
 print(myobj.$foobar + "\n");  // Undefined (in 1st run!)
 print(myobj.$_SERVER['REQUEST_TIME'] + "\n");
-myobj.$foobar = 'CHANGED'; // should be read only!
+myobj.$foobar = 'CHANGED'; // read-write from JS
 print(myobj.$foobar + "\n");  // Undefined (in 1st run!)
 EOT;
 
-$a = new V8Js("myobj", array('$_SERVER' => '_SERVER', '$foobar' => 'myfoobar'));
+$myfoobar = 'undefined';
+
+$a = new V8Js("myobj", array('_SERVER' => &$_SERVER, 'foobar' => &$myfoobar));
 $a->executeString($JS, "test1.js");
 
 $myfoobar = 'myfoobarfromphp';
 
 $a->executeString($JS, "test2.js");
 
-// Check that variables do not get in object .. 
 var_dump($a->myfoobar, $a->foobar);
 
 ?>
@@ -31,11 +32,11 @@ var_dump($a->myfoobar, $a->foobar);
 undefined
 undefined
 %d
-undefined
+CHANGED
 undefined
 myfoobarfromphp
 %d
-myfoobarfromphp
+CHANGED
 NULL
-NULL
+string(7) "CHANGED"
 ===EOF===

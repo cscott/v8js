@@ -16,7 +16,7 @@ function dump(a)
 function test()
 {
 	var a = 'From PHP: ' + PHP.somevar;
-	PHP.somevar = 'changed in JS!'; // Should not change..
+	PHP.somevar = 'changed in JS!';
 
 	dump(PHP.myarray);
 
@@ -42,7 +42,7 @@ $a->myarray = array(
 
 $a->executeString($JS, "test.js");
 
-// Check that variable has not been modified
+// Check that variable was successfully modified
 var_dump($a->somevar);
 ?>
 ===EOF===
@@ -54,5 +54,5 @@ d => value for key D
 From PHP: From PHP with love!
 123
 3.14
-string(19) "From PHP with love!"
+string(14) "changed in JS!"
 ===EOF===
